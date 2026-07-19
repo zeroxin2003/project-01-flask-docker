@@ -1,0 +1,43 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build and start services
+        run: docker compose up -d --build
+
+      - name: Wait for services to be healthy
+        run: |
+          echo "Waiting for all services to start..."
+          sleep 15
+          docker compose ps
+
+      - name: Test health endpoint
+        run: |
+          response=$(curl -s http://localhost/health)
+          echo "Health check response: $response"
+          echo "$response" | grep -q '"status".*"ok"' || (echo "Health check failed!" && exit 1)
+
+      - name: Test home page
+        run: |
+          response=$(curl -s http://localhost/)
+          echo "$response" | grep -q "Flask + PostgreSQL" || (echo "Home page check failed!" && exit 1)
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Stop services
+        if: always()
+        run: docker compose down
