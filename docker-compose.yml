@@ -6,7 +6,13 @@ services:
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      - web
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
 
   web:
     build: .
@@ -16,9 +22,16 @@ services:
       - DB_USER=devops
       - DB_PASSWORD=secret123
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     expose:
       - "5000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   db:
     image: postgres:16-alpine
@@ -28,6 +41,12 @@ services:
       - POSTGRES_PASSWORD=secret123
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devops -d devops_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
 volumes:
   db_data:
