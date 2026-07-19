@@ -47,7 +47,7 @@ def home():
         conn.close()
         return f"""
         <html>
-        <head><title>DevOps Project 02</title></head>
+        <head><title>DevOps Project - Live on VPS!</title></head>
         <body style="font-family: Arial; max-width: 600px; margin: 80px auto; text-align: center;">
             <h1>🚀 Flask + PostgreSQL + Docker Compose</h1>
             <p>This page has been visited <strong>{count}</strong> time(s).</p>
